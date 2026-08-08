@@ -139,7 +139,7 @@
                 else if inline then attrsToInlineTable {inherit attrs raw;} else attrsToKeyedTable attrs
                 ;
 
-                attrsToInlineTable = {attrs, isRaw ? true}:
+                attrsToInlineTable = {attrs, raw ? true}:
                 let
                   recurse = value: if isTable value
                                 then attrsToInlineTable value
