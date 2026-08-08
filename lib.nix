@@ -142,8 +142,7 @@
                 }'';
 
                 attrsToRawTable = attrs:
-                ''{
-                ${builtins.concatStringsSep ", "
+                ''{${builtins.concatStringsSep ", "
                         (mapAttrsToList (key: value:
                         ''${key} = ${
                         if builtins.isAttrs value
@@ -151,7 +150,7 @@
                                 then interpretLuaValue value
                                 else attrsToRawTable value
                         else interpretLuaValue value}''
-                        ) attrs)
+                        ) attrs)}
                 }'';
 
                 listToAnonTable = list: "{${builtins.concatStringsSep ", " list}}";
