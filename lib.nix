@@ -79,14 +79,30 @@
                 # Must be a number
                 else toString input;
 
-                luaValue = with types; nullOr (oneOf [
-                        str
-                        bool
-                        number
-                        (attrsOf luaValue)
-                        (listOf luaValue)
-                        maybeLuaText
-                ]);
+                # Construct a recursive type without causing definition panic
+                luaValue = let
+                        baseType = with types; nullOr (oneOf [
+                                str
+                                bool
+                                number
+                                (attrsOf luaValue)
+                                (listOf luaValue)
+                                maybeLuaText
+                                ]);
+                        in types.mkOptionType {
+                                inherit (baseType)
+                                        check
+                                        merge
+                                        emptyValue
+                                        typeMerge
+                                        functor
+                                        deprecationMessage
+                                        nestedTypes
+                                        ;
+                                name = "luaValue";
+                                description = "Nix value convertible to a Lua data type";
+                                descriptionClass = "noun";
+                        };
 
 
                 luaFunctionDeclaration = with types; submodule({name, ...}:{options =
