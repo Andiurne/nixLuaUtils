@@ -136,7 +136,7 @@
                 attrsToKeyedTable = attrs:
                 ''
                 {
-                  ${builtins.concatStringsSep ", "
+                  ${builtins.concatStringsSep ",\n  "
                         (mapAttrsToList (key: value:
                         ''["${key}"] = ${if isTable value
                                           then addIndentExceptFirst (interpretLuaValue value)
@@ -149,14 +149,12 @@
                 attrsToRawTable = attrs:
                 ''
                 {
-                  ${builtins.concatStringsSep ", "
+                  ${builtins.concatStringsSep ",\n  "
                         (mapAttrsToList (key: value:
                         ''${key} = ${
-                        if builtins.isAttrs value
-                        then if hasLuaText value
-                                then interpretLuaValue value
-                                else addIndentExceptFirst (attrsToRawTable value)
-                        else interpretLuaValue value}''
+                        if isTable value
+                                then addIndentExceptFirst (attrsToRawTable value)
+                                else interpretLuaValue value}''
                         ) attrs)}
                 }'';
 
