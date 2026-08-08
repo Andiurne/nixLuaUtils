@@ -146,7 +146,7 @@
                                 else interpretLuaValue value;
                   table = builtins.concatStringsSep ", " (
                         mapAttrsToList (key: value:
-                                if isRaw then "${key} = ${recurse value}"
+                                if raw then "${key} = ${recurse value}"
                                         else ''["${key}"] = ${recurse value}''
                                 )
                         attrs
