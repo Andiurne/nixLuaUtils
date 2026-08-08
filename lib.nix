@@ -71,7 +71,7 @@
 
                                 # other attrs (interpreted as table)
                                 # will recurse by design
-                                else attrsToKeyedTable input
+                                else attrsToTable { attrs = input; raw = false; inline = true; }
                 else if builtins.isString input
                         then addQuotes input
                 else if isBool input
@@ -159,7 +159,7 @@
                   ${builtins.concatStringsSep ",\n  "
                         (mapAttrsToList (key: value:
                         ''["${key}"] = ${if isTable value
-                                          then addIndentExceptFirst (interpretLuaValue value)
+                                          then addIndentExceptFirst (attrsToKeyedTable value)
                                           else interpretLuaValue value
                                         }''
                         ) attrs)
