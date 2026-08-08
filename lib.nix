@@ -133,6 +133,26 @@
                 To use non-string keys, use attrsToRawTable, which will use
                 the literal nix strings.
                 */
+                attrsToTable = {attrs, raw ? true, inline ? true}:
+                if raw
+                then if inline then attrsToInlineTable {inherit attrs raw;} else attrsToRawTable attrs
+                else if inline then attrsToInlineTable {inherit attrs raw;} else attrsToKeyedTable attrs
+                ;
+
+                attrsToInlineTable = {attrs, isRaw ? true}:
+                let
+                  recurse = value: if isTable value
+                                then attrsToInlineTable value
+                                else interpretLuaValue value;
+                  table = builtins.concatStringsSep ", " (
+                        mapAttrsToList (key: value:
+                                if isRaw then "${key} = ${recurse value}"
+                                        else ''["${key}"] = ${recurse value}''
+                                )
+                        attrs
+                        );
+                in "{ ${table} }";
+
                 attrsToKeyedTable = attrs:
                 ''
                 {
