@@ -143,7 +143,7 @@
 
                 attrsToRawTable = attrs:
                 ''{
-                ${builtins.concatStringSep ", "
+                ${builtins.concatStringsSep ", "
                         (mapAttrsToList (key: value:
                         ''${key} = ${
                         if builtins.isAttrs value
