@@ -15,7 +15,8 @@
                 });
 
 
-                addTab = lines: "\t" + (builtins.replaceStrings ["\n"] ["\n\t"] lines);
+                addIndent = lines: "  " + addIndentExceptFirst lines;
+                addIndentExceptFirst = lines: builtins.replaceStrings ["\n"] ["\n  "] lines;
                 addQuotes = text: ''"${text}"'';
 
         in rec {
@@ -35,6 +36,7 @@
 
                 maybeLuaText = with types; either str luaText;
                 hasLuaText = value: builtins.isAttrs value && value ? lua;
+                isTable = value: builtins.isAttrs value && !(hasLuaText value);
                 getLuaText = attrs: attrs.lua;
 
                 # Takes in a maybeLuaText instance,
@@ -115,7 +117,7 @@
                 };});
                 mkLuaFunctionText = {name ? "", parameters ? [], body}: ''
                 function ${name} (${builtins.concatStringsSep ", " parameters})
-                ${addTab body}
+                ${addIndent body}
                 end
                 '';
 
@@ -134,21 +136,26 @@
                 attrsToKeyedTable = attrs:
                 ''
                 {
-                ${builtins.concatStringsSep ", "
+                  ${builtins.concatStringsSep ", "
                         (mapAttrsToList (key: value:
-                        ''["${key}"] = ${interpretLuaValue value}''
+                        ''["${key}"] = ${if isTable value
+                                          then addIndentExceptFirst (interpretLuaValue value)
+                                          else interpretLuaValue value
+                                        }''
                         ) attrs)
                 }
                 }'';
 
                 attrsToRawTable = attrs:
-                ''{${builtins.concatStringsSep ", "
+                ''
+                {
+                  ${builtins.concatStringsSep ", "
                         (mapAttrsToList (key: value:
                         ''${key} = ${
                         if builtins.isAttrs value
                         then if hasLuaText value
                                 then interpretLuaValue value
-                                else attrsToRawTable value
+                                else addIndentExceptFirst (attrsToRawTable value)
                         else interpretLuaValue value}''
                         ) attrs)}
                 }'';
