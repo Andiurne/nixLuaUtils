@@ -213,8 +213,10 @@ in rec {
              Path is an ordered list s.t.
              `swayimg.viewer.set_window_background()` has path
              `["swayimg" "viewer" "set_window_background"]`
+
+             args is a list of raw lua strings
            */
-          mkLuaFunctionCall = {path, argList ? []}:
+          mkLuaFunctionCall = {path, args ? []}:
             let
               pathText =
                 if hasLuaText path
@@ -222,5 +224,5 @@ in rec {
                 else if builtins.isList path
                   then builtins.concatStringsSep "." path
                 else path;
-            in "${pathText}(${builtins.concatStringsSep ", " argList})";
+            in "${pathText}(${builtins.concatStringsSep ", " args})";
 }
