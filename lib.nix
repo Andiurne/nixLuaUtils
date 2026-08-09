@@ -22,10 +22,10 @@ in rec {
   # Intermediary utilities
   addIndent = lines: "  " + addIndentExceptFirst lines;
   addIndentExceptFirst = lines: builtins.replaceStrings ["\n"] ["\n  "] lines;
-  stripTab = n: lines:
+  stripTabs = n: lines:
             if n == 0
               then lines
-            else stripTab (n - 1) (builtins.replaceStrings ["\t"] [""] lines);
+              else stripTabs (n - 1) (builtins.replaceStrings ["\t"] [""] lines);
 
 
 
