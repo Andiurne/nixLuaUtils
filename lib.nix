@@ -115,7 +115,7 @@ in rec {
 
 
           luaFunctionDeclaration = with types; submodule({name, ...}:{options =
-              {
+            {
               name = mkOption {
               type = singleLineStr;
               default = name;
@@ -139,7 +139,7 @@ in rec {
                 The function body as a multiline string.
                 '';
               };
-              };});
+            };});
 
 
 
@@ -147,7 +147,7 @@ in rec {
             ''
             function ${name} (${builtins.concatStringsSep ", " parameters})
             ${addIndent body}
-          end
+            end
             '';
 
           mkLuaVariableText = {name, value}: ''${name} = ${value}'';
@@ -216,11 +216,11 @@ in rec {
            */
           mkLuaFunctionCall = {path, argList ? []}:
             let
-            pathText = if hasLuaText path
-            then getLuaText path
-            else if builtins.isList path
-              then builtins.concatStringsSep "." path
+              pathText =
+                if hasLuaText path
+                  then getLuaText path
+                else if builtins.isList path
+                  then builtins.concatStringsSep "." path
                 else path;
-                in
-                  "${pathText}(${builtins.concatStringsSep ", " argList})";
+            in "${pathText}(${builtins.concatStringsSep ", " argList})";
 }
