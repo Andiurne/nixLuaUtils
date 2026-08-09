@@ -213,7 +213,7 @@ in rec {
           # attrs isn't a component of the initial table for easier mapping
           # i.e. mapAttrs (mkLuaCallWithTable {path = ["hl" "bind"];}) hl.bind
           mkLuaCallWithTable = {path, raw ? true, inline ? false }: attrs:
-            mkLuaFunctionCall {inherit path; args = attrsToTable{inherit raw inline attrs;}; };
+            mkLuaFunctionCall {inherit path; args = [ (attrsToTable {inherit raw inline attrs;}) ]; };
 
           /* Formatter for a function call
              Path is an ordered list s.t.
