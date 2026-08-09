@@ -210,7 +210,9 @@ in rec {
           listToAnonTable = list: "{${builtins.concatStringsSep ", " list}}";
 
           # Composes table conversion with a function call
-          luaCallWithTable = {path, raw ? true, inline ? false }: attrs:
+          # attrs isn't a component of the initial table for easier mapping
+          # i.e. mapAttrs (mkLuaCallWithTable {path = ["hl" "bind"];}) hl.bind
+          mkLuaCallWithTable = {path, raw ? true, inline ? false }: attrs:
             mkLuaFunctionCall {inherit path; args = attrsToTable{inherit raw inline attrs;}; };
 
           /* Formatter for a function call
