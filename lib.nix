@@ -209,6 +209,10 @@ in rec {
 
           listToAnonTable = list: "{${builtins.concatStringsSep ", " list}}";
 
+          # Composes table conversion with a function call
+          luaCallWithTable = {path, raw ? true, inline ? false }: attrs:
+            mkLuaFunctionCall {inherit path; args = attrsToTable{inherit raw inline attrs;}; };
+
           /* Formatter for a function call
              Path is an ordered list s.t.
              `swayimg.viewer.set_window_background()` has path
