@@ -56,7 +56,7 @@ in rec {
     else input;
 
   /* Takes in an instance of either:
-     - A string
+     - A string (those starting with "function" will be interpreted raw)
      - A boolean
      - A number
      - An attribute set
@@ -82,153 +82,159 @@ in rec {
 # will recurse by design
     else attrsToTable { attrs = input; raw = false; inline = true; }
   else if builtins.isString input
-    then addQuotes input
-      else if isBool input
-        then boolToString input
+    then if lib.hasPrefix "function" input
+      then input
+      else addQuotes input
+  else if isBool input
+    then boolToString input
 # Must be a number
-          else toString input;
+  else toString input;
 
 # Construct a recursive type without causing definition panic
-          luaValue = let
-            baseType = with types; nullOr (oneOf [
-                str
-                bool
-                number
-                (attrsOf luaValue)
-                (listOf luaValue)
-                maybeLuaText
-            ]);
-          in types.mkOptionType {
-            inherit (baseType)
-              check
-              merge
-              emptyValue
-              typeMerge
-              functor
-              deprecationMessage
-              nestedTypes
-              ;
-            name = "luaValue";
-            description = "Nix value convertible to a Lua data type";
-            descriptionClass = "noun";
-          };
+  luaValue = let
+    baseType = with types; nullOr (oneOf [
+      str
+      bool
+      number
+      (attrsOf luaValue)
+      (listOf luaValue)
+      maybeLuaText
+    ]);
+  in types.mkOptionType {
+    inherit (baseType)
+      check
+      merge
+      emptyValue
+      typeMerge
+      functor
+      deprecationMessage
+      nestedTypes
+      ;
+    name = "luaValue";
+    description = "Nix value convertible to a Lua data type";
+    descriptionClass = "noun";
+  };
 
 
-          luaFunctionDeclaration = with types; submodule({name, ...}:{options =
-            {
-              name = mkOption {
-              type = singleLineStr;
-              default = name;
-              description = ''
-              Name of the local lua function to be declared.
-              '';
-              };
+  luaFunctionDeclaration = with types; submodule({name, ...}:{options =
+    {
+      name = mkOption {
+        type = singleLineStr;
+        default = name;
+        description = ''
+        Name of the local lua function to be declared.
+        '';
+      };
 
-              parameters = mkOption {
-              type = listOf singleLineStr;
-              default = [];
-              description = ''
-              A list of names of function parameters to declare.
-              '';
-              };
+      parameters = mkOption {
+        type = listOf singleLineStr;
+        default = [];
+        description = ''
+        A list of names of function parameters to declare.
+        '';
+      };
 
-              body = mkOption {
-              type = lines;
-              default = '''';
-              description = ''
-                The function body as a multiline string.
-                '';
-              };
-            };});
+      body = mkOption {
+        type = lines;
+        default = '''';
+        description = ''
+        The function body as a multiline string.
+        '';
+      };
+  };});
 
 
 
-          mkLuaFunctionText = {name ? "", parameters ? [], body}:
-            ''
-            function ${name} (${builtins.concatStringsSep ", " parameters})
-            ${addIndent body}
-            end
-            '';
+  mkLuaFunctionText = {name ? "", parameters ? [], body}:
+    ''
+    function ${name} (${builtins.concatStringsSep ", " parameters})
+    ${addIndent body}
+    end
+    '';
 
-          mkLuaVariableText = {name, value}: ''${name} = ${value}'';
+  mkLuaVariableText = {name, value}: ''${name} = ${value}'';
 
-          /* Assumes values in the attrs are parseable by interpretLuaValue,
-             and keys are strings to be surrounded
-             in [""]. So,
-             `attrsToConvert = {color.lua = "0xff0000"; text = "hello";}`
-             ->
-             `{["color"] = 0xff0000, ["text"] = "hello" }`
+  /* Assumes values in the attrs are parseable by interpretLuaValue,
+  and keys are strings to be surrounded
+  in [""]. So,
+  `attrsToConvert = {color.lua = "0xff0000"; text = "hello";}`
+  ->
+  `{["color"] = 0xff0000, ["text"] = "hello" }`
 
-             To use non-string keys, use attrsToRawTable, which will use
-             the literal nix strings.
-           */
-          attrsToTable = {attrs, raw ? true, inline ? true}:
-            if raw
-              then if inline then attrsToInlineTable {inherit attrs raw;} else attrsToRawTable attrs
-            else if inline then attrsToInlineTable {inherit attrs raw;} else attrsToKeyedTable attrs
-              ;
+  To use non-string keys, use attrsToRawTable, which will use
+  the literal nix strings.
+  */
+  attrsToTable = {attrs, raw ? true, inline ? true}:
+    if raw
+      then if inline
+        then attrsToInlineTable {inherit attrs raw;}
+        else attrsToRawTable attrs
+    else if inline
+      then attrsToInlineTable {inherit attrs raw;}
+    else attrsToKeyedTable attrs
+    ;
 
-          attrsToInlineTable = {attrs, raw ? true}:
-            let
-            recurse = value: if isTable value
-            then attrsToInlineTable value
-            else interpretLuaValue value;
-          table = builtins.concatStringsSep ", " (
-              mapAttrsToList (key: value:
-                if raw then "${key} = ${recurse value}"
-                else ''["${key}"] = ${recurse value}''
-                )
-              attrs
-              );
-          in "{ ${table} }";
+  attrsToInlineTable = {attrs, raw ? true}:
+    let
+      recurse = value:
+        if isTable value
+          then attrsToInlineTable value
+          else interpretLuaValue value;
+      table = builtins.concatStringsSep ", " (
+        mapAttrsToList (key: value:
+          if raw
+            then "${key} = ${recurse value}"
+            else ''["${key}"] = ${recurse value}''
+        ) attrs);
+    in "{ ${table} }";
 
-          attrsToKeyedTable = attrs:
-            ''
-            {
-              ${builtins.concatStringsSep ",\n  "
-                (mapAttrsToList (key: value:
-                                 ''["${key}"] = ${if isTable value
-                                 then addIndentExceptFirst (attrsToKeyedTable value)
-                                 else interpretLuaValue value
-                                 }''
-                                ) attrs)
-              }
-            }'';
+  attrsToKeyedTable = attrs:
+  ''
+  {
+    ${builtins.concatStringsSep ",\n  "
+    (mapAttrsToList (key: value:
+      ''["${key}"] = ${
+        if isTable value
+          then addIndentExceptFirst (attrsToKeyedTable value)
+          else interpretLuaValue value
+      }''
+      ) attrs)}
+  }'';
 
-          attrsToRawTable = attrs:
-            ''
-            {
-              ${builtins.concatStringsSep ",\n  "
-                (mapAttrsToList (key: value:
-                                 ''${key} = ${
-                                 if isTable value
-                                 then addIndentExceptFirst (attrsToRawTable value)
-                                 else interpretLuaValue value}''
-                                ) attrs)}
-            }'';
+  attrsToRawTable = attrs:
+  ''
+  {
+    ${builtins.concatStringsSep ",\n  "
+      (mapAttrsToList (key: value:
+        ''${key} = ${
+          if isTable value
+            then addIndentExceptFirst (attrsToRawTable value)
+            else interpretLuaValue value}''
+    ) attrs)}
+  }'';
 
-          listToAnonTable = list: "{${builtins.concatStringsSep ", " list}}";
+  listToAnonTable = list: "{${builtins.concatStringsSep ", " list}}";
 
-          # Composes table conversion with a function call
-          # attrs isn't a component of the initial table for easier mapping
-          # i.e. mapAttrs (mkLuaCallWithTable {path = ["hl" "bind"];}) hl.bind
-          mkLuaCallWithTable = {path, raw ? true, inline ? false }: attrs:
-            mkLuaFunctionCall {inherit path; args = [ (attrsToTable {inherit raw inline attrs;}) ]; };
+# Composes table conversion with a function call
+# attrs isn't a component of the initial table for easier mapping
+# i.e. mapAttrs (mkLuaCallWithTable {path = ["hl" "bind"];}) hl.bind
+  mkLuaCallWithTable = {path, raw ? true, inline ? false }: attrs:
+    mkLuaFunctionCall {inherit path; args = [ (attrsToTable {inherit raw inline attrs;}) ]; };
 
-          /* Formatter for a function call
-             Path is an ordered list s.t.
-             `swayimg.viewer.set_window_background()` has path
-             `["swayimg" "viewer" "set_window_background"]`
+  /* Formatter for a function call
+     Path is an ordered list s.t.
+     `swayimg.viewer.set_window_background()` has path
+     `["swayimg" "viewer" "set_window_background"]`
 
-             args is a list of raw lua strings
-           */
-          mkLuaFunctionCall = {path, args ? []}:
-            let
-              pathText =
-                if hasLuaText path
-                  then getLuaText path
-                else if builtins.isList path
-                  then builtins.concatStringsSep "." path
-                else path;
-            in "${pathText}(${builtins.concatStringsSep ", " args})";
+     args is a list of raw lua strings
+   */
+  mkLuaFunctionCall = {path, args ? []}:
+    let
+    pathText =
+    if hasLuaText path
+      then getLuaText path
+    else if builtins.isList path
+      then builtins.concatStringsSep "." path
+    else path;
+  in "${pathText}(${builtins.concatStringsSep ", " args})";
 }
