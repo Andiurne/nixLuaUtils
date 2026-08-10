@@ -226,15 +226,17 @@ in rec {
      `swayimg.viewer.set_window_background()` has path
      `["swayimg" "viewer" "set_window_background"]`
 
-     args is a list of raw lua strings
+     args is a single or list of raw lua strings
    */
   mkLuaFunctionCall = {path, args ? []}:
     let
-    pathText =
-    if hasLuaText path
-      then getLuaText path
-    else if builtins.isList path
-      then builtins.concatStringsSep "." path
-    else path;
-  in "${pathText}(${builtins.concatStringsSep ", " args})";
+      pathText =
+        if hasLuaText path
+          then getLuaText path
+        else if builtins.isList path
+          then builtins.concatStringsSep "." path
+        else path
+        ;
+      wrappedArgs = if builtins.isList args then args else [ args ];
+  in "${pathText}(${builtins.concatStringsSep ", " wrappedArgs})";
 }
