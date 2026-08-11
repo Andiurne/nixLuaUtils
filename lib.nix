@@ -140,33 +140,8 @@ in rec {
               };
             };
 
-          luaFunctionDeclaration = with types; submodule({name, ...}:{options =
-            {
-              name = mkOption {
-              type = singleLineStr;
-              default = name;
-              description = ''
-              Name of the lua function to be declared.
-              '';
-              };
-
-              parameters = mkOption {
-              type = listOf singleLineStr;
-              default = [];
-              description = ''
-              A list of names of function parameters to declare.
-              '';
-              };
-
-              body = mkOption {
-              type = lines;
-              default = '''';
-              description = ''
-                The function body as a multiline string.
-                '';
-              };
-            };});
-
+          luaAnonymousFunction = with types; submodule {options = luaFunction;};
+          luaFunctionDeclaration = with types; submodule({name, ...}:{options = luaFunction // {name.default = name;}});
 
 
           mkLuaFunctionText = {name ? "", parameters ? [], body}:
