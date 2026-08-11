@@ -117,7 +117,7 @@ in rec {
           luaFunction = with types; {
               name = mkOption {
               type = singleLineStr;
-              default = name;
+              default = "";
               description = ''
               Name of the local lua function to be declared.
               '';
@@ -146,7 +146,7 @@ in rec {
               type = singleLineStr;
               default = name;
               description = ''
-              Name of the local lua function to be declared.
+              Name of the lua function to be declared.
               '';
               };
 
