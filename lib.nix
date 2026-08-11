@@ -113,6 +113,32 @@ in rec {
             descriptionClass = "noun";
           };
 
+          # luaFunction without the submodule
+          luaFunction = with types; {
+              name = mkOption {
+              type = singleLineStr;
+              default = name;
+              description = ''
+              Name of the local lua function to be declared.
+              '';
+              };
+
+              parameters = mkOption {
+              type = listOf singleLineStr;
+              default = [];
+              description = ''
+              A list of names of function parameters to declare.
+              '';
+              };
+
+              body = mkOption {
+              type = lines;
+              default = '''';
+              description = ''
+                The function body as a multiline string.
+                '';
+              };
+            };
 
           luaFunctionDeclaration = with types; submodule({name, ...}:{options =
             {
