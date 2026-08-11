@@ -154,7 +154,7 @@ in rec {
         parameters
         body
       ;
-    };
+    };});
 
 
   mkLuaFunctionText = {name ? "", parameters ? [], body}:
