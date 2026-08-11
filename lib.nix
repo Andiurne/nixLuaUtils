@@ -143,7 +143,18 @@ in rec {
   };
 
   luaAnonymousFunction = with types; submodule {options = luaFunction;};
-  luaFunctionDeclaration = with types; submodule({name, ...}:{options = luaFunction // {name.default = name;};});
+  luaFunctionDeclaration = with types; submodule({name, ...}:{options =
+    {
+      name = mkOption {
+        type = singleLineStr;
+        default = name;
+        description = "Name of the function to declare.";
+      };
+      inherit (luaFunction)
+        parameters
+        body
+      ;
+    };
 
 
   mkLuaFunctionText = {name ? "", parameters ? [], body}:
